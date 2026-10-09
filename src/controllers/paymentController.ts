@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { PaymentCurrency } from "../types/payment";
 import { CreatePaymentInput, Payment, IdempotencyRecord } from "../types/payment";
 import { randomUUID } from "crypto";
-
+import { recipients } from "../stores/recipients";
 
 const payments = new Map<string, Payment>();
 
@@ -16,9 +16,10 @@ function isPaymentCurrency(
 
 const paymentController = {
   async post(req: Request, res: Response) {
-    const idempotencyKey = req.headers["idempotency-key"] || req.headers["Idempotency-Key"] || req.headers["Idempotency-key"];
+    const idempotencyKey = req.get("Idempotency-Key");
     console.log("Idempotency-Key:", idempotencyKey);
-    const {customerId, amountInCents, currency} = req.body as Record<string, unknown>;
+    const {customerId, recipientId, amountInCents, currency} = req.body as Record<string, unknown>;
+  
 
     if (!idempotencyKey) {
       res.status(400).json({
@@ -46,8 +47,19 @@ const paymentController = {
       });
       return;
     }
-
-
+    if(typeof recipientId !== "string" || recipientId.trim().length === 0) {
+      res.status(400).json({
+        error: "recipientId is required",
+      });
+      return;
+    }
+    const recipient = recipients.get(recipientId.toString());
+    if (!recipient) {
+      return res.status(404).json({
+        error: "Recipient not found",
+      });
+    }
+   
     if (
       typeof customerId !== "string" ||
       customerId.trim().length === 0
@@ -79,6 +91,7 @@ const paymentController = {
     // Normalizar os dados antes de comparar as requisições.
     const input: CreatePaymentInput = {
       customerId: customerId.trim(),
+      recipientId: recipientId.trim(),
       amountInCents,
       currency,
     };
@@ -102,10 +115,10 @@ const paymentController = {
       return;
     }
 
-    // 4. Criar o pagamento somente se a chave for nova.
     const payment: Payment = {
       id: randomUUID(),
       customerId: input.customerId,
+      recipientId: input.recipientId,
       amountInCents: input.amountInCents,
       currency: input.currency,
       status: "PENDING",
@@ -126,14 +139,28 @@ const paymentController = {
   async getPayment(req: Request, res: Response) {
     const { id } = req.params;
 
-    return res.status(200).json({
-      message: `Payment details for ID: ${id}`,
-    });
+    const payment = payments.get(id.toString());
+
+    if (!payment) {
+      return res.status(404).json({
+        error: "Payment not found",
+      });
+    }
+
+    return res.status(200).json(payment);
   },
 
   async listPayments(req: Request, res: Response) {
+    const paymentsArray = Array.from(payments.values());
+    if (paymentsArray.length === 0) {
+      return res.status(200).json({
+        message: "No payments found",
+        data: [],
+      });
+    }
     return res.status(200).json({
       message: "List of all payments",
+      data: paymentsArray,
     });
   },
 };
