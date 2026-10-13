@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum Currency {
+  BRL
+  USD
+  EUR
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+model Recipient {
+  id                   String   @id @default(cuid())
+  name                 String   @db.VarChar(150)
+  destinationCountry   String   @db.Char(2)
+  destinationReference String   @db.VarChar(191)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  payments Payment[]
+}
+
+model Payment {
+  id                 String        @id @default(cuid())
+  customerId         String        @db.VarChar(191)
+  recipientId        String
+  amountInCents      Int
+  currency           Currency
+  status             PaymentStatus @default(PENDING)
+  idempotencyKey     String        @unique @db.VarChar(255)
+  requestFingerprint String        @db.Char(64)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  recipient Recipient @relation( fields: [recipientId],    references: [id],    onDelete: Restrict  )
+
+  @@index([customerId])
+  @@index([status, createdAt])
+}
