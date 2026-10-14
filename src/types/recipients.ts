@@ -1,5 +1,3 @@
-import { Date } from "mongoose";
-
 export interface Recipient { 
    
 id: string,
