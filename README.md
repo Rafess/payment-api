@@ -130,8 +130,8 @@ This project is still under development.
 * [x] Implement recipient registration and retrieval.
 * [x] Associate payments with registered recipients.
 * [x] Introduce Prisma and MySQL for persistent storage.
-* [ ] Add database-backed idempotency and concurrency protection.
-* [ ] Implement payment status transitions and failure handling.
+* [x] Add database-backed idempotency and concurrency protection.
+* [x] Implement payment status transitions and failure handling.
 * [ ] Add automated tests for validation, idempotency, and payment operations.
 * [ ] Improve API documentation and error handling.
 
