@@ -13,6 +13,8 @@ router.get("/payments/:id", paymentController.getPayment);
 // Listar pagamentos
 router.get("/payments", paymentController.listPayments);
 
+// Processar um pagamento por ID
+router.post("/payments/:id/process", paymentController.process);
 
 // --- RECIPIENTS ----
 router.get("/recipients/:id", recipientController.getRecipient);
